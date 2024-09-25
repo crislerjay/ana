@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="Shift_JIS"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV</title>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.40/jquery.csv.min.js" integrity="sha512-Y8iWYJDo6HiTo5xtml1g4QqHtl/PO1w+dmUpQfQSOTqKNsMhExfyPN2ncNAe9JuJUSKzwK/b6oaNPop4MXzkwg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="table"></div>
+
+  <script>
+    $(function() {
+      // read CSV
+      $.ajax({
+        type: "GET",
+        url: "username.csv",
+        dataType: "text",
+        beforeSend: function(xhr){
+            xhr.overrideMimeType("text/html;charset=Shift_JIS");
+        },
+        error: function (jqXHR) {
+          console.log("Uncaught Error : " + jqXHR.status + " " + jqXHR.statusText);
+        },
+        success: function(result) {
+          var ctr_data = $.csv.toArrays(result);
+
+          // converted as array
+          convertToJSON(ctr_data);
+          displayTableHead()
+        }
+      });
+
+      // converted as JSON
+      function convertToJSON(data){
+        const headers = data[0][0].split(";").map(header => header.trim());
+
+        const jsonData = data.slice(1).map(row => {
+            const values = row[0].split(";").map(value => value.trim());
+            return headers.reduce((obj, header, index) => {
+                obj[header] = values[index];
+                return obj;
+            }, {});
+        });
+
+        displayTableBody(jsonData)
+      };
+
+      function displayTableHead(data) {
+        const table = document.getElementById('table');
+        const tableHead = document.createElement("thead");
+
+        let row = `<tr>
+          <th>ID</th>
+          <th>画像用</th>
+          <th>商品名</th>
+          <th>遷移先</th>
+          <th>株優価格（税込）</th>
+          <th>定価（税込）</th>
+        </tr>`;
+        tableHead.innerHTML += row;
+        table.appendChild(tableHead)
+      }
+
+      function displayTableBody(data) {
+        const table = document.getElementById('table');
+        const tableBody = document.createElement('tbody');
+
+        data.forEach(item => {
+            let row = `<tr>
+                <td>${item.ID}</td>
+                <td><img src="${item.imgPath}" width="80" /></td>
+                <td>${item.productName}</td>
+                <td><a href="${item.destinationURL}">Link</a></td>
+                <td>&#165;${item.shareholderPrice}</td>
+                <td>&#165;${item.normalPrice}</td>
+              </tr>`;
+              tableBody.innerHTML += row;
+        });
+        table.appendChild(tableBody)
+      }
+    });
+  </script>
+</body>
+</html>
